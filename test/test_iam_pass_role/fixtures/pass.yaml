@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  PassPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "iam:PassRole"
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: "o-ab1234cdef5"
