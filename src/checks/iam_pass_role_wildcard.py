@@ -1,4 +1,5 @@
 import json
+
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
 
@@ -52,9 +53,10 @@ class IAMPassRoleWildcard(BaseResourceCheck):
                     continue
 
                 condition = statement.get("Condition", {})
-                org_condition = (
-                    condition.get("StringEquals", {}).get("aws:PrincipalOrgID")
-                    or condition.get("StringEqualsIgnoreCase", {}).get("aws:PrincipalOrgID")
+                org_condition = condition.get("StringEquals", {}).get(
+                    "aws:PrincipalOrgID"
+                ) or condition.get("StringEqualsIgnoreCase", {}).get(
+                    "aws:PrincipalOrgID"
                 )
                 if not org_condition:
                     return CheckResult.FAILED

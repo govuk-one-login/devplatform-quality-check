@@ -4,7 +4,7 @@
 [PSREDEV-XXX]
 
 ## Checklist
-- [ ] Is my change backwards compatible? 
+- [ ] Is my change backwards compatible?
 **_Please include evidence_**
 
 - [ ] I have installed and run pre-commit following guidance in README.md

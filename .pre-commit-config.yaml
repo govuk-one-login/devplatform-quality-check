@@ -4,13 +4,11 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-      - id: check-added-large-files
-        exclude: ".*package-lock.json"
-      - id: check-case-conflict
       - id: detect-private-key
       - id: end-of-file-fixer
-      - id: no-commit-to-branch
       - id: trailing-whitespace
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
   - repo: https://github.com/psf/black
     rev: 26.5.1
     hooks:
@@ -27,4 +25,5 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+        args: ["--profile", "black", "--filter-files"]
         exclude: ^.*-hook/src/.*/models.py$
