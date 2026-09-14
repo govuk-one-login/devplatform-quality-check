@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from helpers import run_check
+from conftest import run_check
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 CHECK_ID = "GDS_DEVPLATFORM_001"
