@@ -49,7 +49,7 @@ class IAMPassRoleArn(BaseResourceCheck):
                 if isinstance(actions, str):
                     actions = [actions]
 
-                if not any(a.lower() in PASS_ROLE_ACTIONS for a in actions):
+                if not any(a in PASS_ROLE_ACTIONS for a in actions):
                     continue
 
                 resources = statement.get("Resource", [])
