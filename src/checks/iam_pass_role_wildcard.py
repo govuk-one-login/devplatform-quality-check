@@ -9,7 +9,7 @@ PASS_ROLE_ACTIONS = {"iam:passrole", "iam:*", "*"}
 class IAMPassRoleWildcard(BaseResourceCheck):
     def __init__(self):
         super().__init__(
-            name="Ensure iam:PassRole is not granted on resources outside the AWS organisation",
+            name="Ensure iam:PassRole is only granted on resources within the deployed AWS account",
             id="GDS_DEVPLATFORM_001",
             categories=[CheckCategories.IAM],
             supported_resources=[
@@ -52,13 +52,13 @@ class IAMPassRoleWildcard(BaseResourceCheck):
                 if not any(a.lower() in PASS_ROLE_ACTIONS for a in actions):
                     continue
 
-                condition = statement.get("Condition", {})
-                org_condition = condition.get("StringEquals", {}).get(
-                    "aws:PrincipalOrgID"
-                ) or condition.get("StringEqualsIgnoreCase", {}).get(
-                    "aws:PrincipalOrgID"
-                )
-                if not org_condition:
+                resources = statement.get("Resource", [])
+                if isinstance(resources, str):
+                    resources = [resources]
+
+                if not all(
+                    r.startswith("arn:") and "${AWS::AccountId}" in r for r in resources
+                ):
                     return CheckResult.FAILED
 
         return CheckResult.PASSED
