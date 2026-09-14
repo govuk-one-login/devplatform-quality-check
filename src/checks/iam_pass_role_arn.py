@@ -3,10 +3,10 @@ import json
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
 
-PASS_ROLE_ACTIONS = {"iam:passrole", "iam:*", "*"}
+PASS_ROLE_ACTIONS = {"iam:PassRole", "iam:*", "*"}
 
 
-class IAMPassRoleWildcard(BaseResourceCheck):
+class IAMPassRoleArn(BaseResourceCheck):
     def __init__(self):
         super().__init__(
             name="Ensure iam:PassRole is only granted on resources within the deployed AWS account",
@@ -64,4 +64,4 @@ class IAMPassRoleWildcard(BaseResourceCheck):
         return CheckResult.PASSED
 
 
-check = IAMPassRoleWildcard()
+check = IAMPassRoleArn()
