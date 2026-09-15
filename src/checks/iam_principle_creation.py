@@ -2,7 +2,13 @@ from checkov.cloudformation.checks.resource.base_resource_check import BaseResou
 from checkov.common.models.enums import CheckCategories, CheckResult
 from helpers import get_policy_documents
 
-PRINCIPAL_CREATION_ACTIONS = {"iam:CreateUser", "iam:CreateRole", "iam:*", "*"}
+PRINCIPAL_CREATION_ACTIONS = {
+    "iam:CreateUser",
+    "iam:CreateRole",
+    "iam:Create*",
+    "iam:*",
+    "*",
+}
 
 
 class IAMPrincipleCreation(BaseResourceCheck):

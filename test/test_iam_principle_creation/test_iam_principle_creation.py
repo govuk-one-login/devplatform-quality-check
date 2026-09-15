@@ -28,6 +28,13 @@ class TestIAMPrincipleCreation(unittest.TestCase):
         self.assertIn(CHECK_ID, failed)
         self.assertNotIn(CHECK_ID, passed)
 
+    def test_fail_create_wildcard_role(self):
+        passed, failed = run_check(
+            FIXTURES / "fail_create_wildcard_role.yaml", CHECK_ID
+        )
+        self.assertIn(CHECK_ID, failed)
+        self.assertNotIn(CHECK_ID, passed)
+
     def test_pass_unrelated_action(self):
         passed, failed = run_check(FIXTURES / "pass_unrelated_action.yaml", CHECK_ID)
         self.assertIn(CHECK_ID, passed)
