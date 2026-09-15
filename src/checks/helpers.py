@@ -1,5 +1,9 @@
 import json
+import re
 
+def matches_with_wildcard(pattern: str, target: str) -> bool:
+    regex = re.escape(pattern).replace(r'\*', '.*')
+    return bool(re.fullmatch(regex, target))
 
 def get_policy_documents(conf):
     properties = conf.get("Properties", {})
