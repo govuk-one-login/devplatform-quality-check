@@ -1,0 +1,2 @@
+checkov~=3.3.17
+pytest~=8.3
