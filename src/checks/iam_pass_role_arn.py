@@ -1,7 +1,6 @@
-import json
-
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
+from helpers import get_policy_documents, is_valid_resource
 
 PASS_ROLE_ACTIONS = {"iam:PassRole", "iam:*", "*"}
 
@@ -20,27 +19,7 @@ class IAMPassRoleArn(BaseResourceCheck):
         )
 
     def scan_resource_conf(self, conf):
-        properties = conf.get("Properties", {})
-
-        policy_documents = []
-
-        # AWS::IAM::ManagedPolicy and AWS::IAM::Policy
-        if "PolicyDocument" in properties:
-            policy_documents.append(properties["PolicyDocument"])
-
-        # AWS::IAM::Role inline policies
-        for inline in properties.get("Policies", []):
-            doc = inline.get("PolicyDocument")
-            if doc:
-                policy_documents.append(doc)
-
-        for doc in policy_documents:
-            if isinstance(doc, str):
-                try:
-                    doc = json.loads(doc)
-                except (json.JSONDecodeError, TypeError):
-                    continue
-
+        for doc in get_policy_documents(conf):
             for statement in doc.get("Statement", []):
                 if statement.get("Effect") != "Allow":
                     continue
@@ -56,9 +35,7 @@ class IAMPassRoleArn(BaseResourceCheck):
                 if isinstance(resources, str):
                     resources = [resources]
 
-                if not all(
-                    r.startswith("arn:") and "${AWS::AccountId}" in r for r in resources
-                ):
+                if not all(is_valid_resource(resource) for resource in resources):
                     return CheckResult.FAILED
 
         return CheckResult.PASSED
