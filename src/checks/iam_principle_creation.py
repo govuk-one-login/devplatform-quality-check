@@ -1,11 +1,10 @@
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
-from helpers import get_policy_documents
+from helpers import get_policy_documents, matches_with_wildcard
 
 PRINCIPAL_CREATION_ACTIONS = {
     "iam:CreateUser",
     "iam:CreateRole",
-    "iam:Create*",
     "iam:*",
     "*",
 }
@@ -34,8 +33,10 @@ class IAMPrincipleCreation(BaseResourceCheck):
                 if isinstance(actions, str):
                     actions = [actions]
 
-                if any(a in PRINCIPAL_CREATION_ACTIONS for a in actions):
-                    return CheckResult.FAILED
+                for action in actions:
+                    for target in PRINCIPAL_CREATION_ACTIONS:
+                        if matches_with_wildcard(action, target):
+                            return CheckResult.FAILED
 
         return CheckResult.PASSED
 
