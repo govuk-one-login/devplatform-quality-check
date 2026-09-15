@@ -1,10 +1,15 @@
 ### repo-specific ###
 # e.g. test directories/files, local outputs
 
+### pytest ###
+.pytest_cache/
+__pycache__/
+*.pyc
+
 ### language-specific ###
 # See https://github.com/github/gitignore for examples
 
-### macOS ### 
+### macOS ###
 # https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
 # General
 .DS_Store
