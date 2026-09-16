@@ -1,6 +1,6 @@
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
-from helpers import get_policy_documents, is_valid_resource
+from helpers import get_policy_documents, is_valid_resource, matches_with_wildcard
 
 PASS_ROLE_ACTIONS = {"iam:PassRole", "iam:*", "*"}
 
@@ -28,7 +28,11 @@ class IAMPassRoleArn(BaseResourceCheck):
                 if isinstance(actions, str):
                     actions = [actions]
 
-                if not any(a in PASS_ROLE_ACTIONS for a in actions):
+                if not any(
+                    matches_with_wildcard(str(a), target)
+                    for a in actions
+                    for target in PASS_ROLE_ACTIONS
+                ):
                     continue
 
                 resources = statement.get("Resource", [])
