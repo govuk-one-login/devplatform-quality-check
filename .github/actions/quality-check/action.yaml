@@ -1,0 +1,39 @@
+name: Run Quality Check
+description: Runs DevPlatform Quality Checks on SAM templates
+
+inputs:
+  framework:
+    description: The framework to use for the quality check
+    required: false
+    default: cloudformation
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout calling repo
+      uses: actions/checkout@master
+
+    - name: Checkout quality-check repo
+      uses: actions/checkout@master
+      with:
+        repository: GDS/devplatform-quality-check
+        path: .devplatform-quality-check
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.14'
+
+    - name: Install Checkov
+      shell: bash
+      run: pip install checkov
+
+    - name: Run Checkov
+      shell: bash
+      run: |
+        checkov -d . \
+          --directory . \
+          --external-checks-dir .devplatform-quality-check/src/checks/ \
+          --soft-fail
+          --output-format cli,sarif \
+          --output-file-path console,results.sarif \
