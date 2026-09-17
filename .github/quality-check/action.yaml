@@ -16,7 +16,8 @@ runs:
     - name: Checkout quality-check repo
       uses: actions/checkout@master
       with:
-        repository: GDS/devplatform-quality-check
+        repository: govuk-one-login/devplatform-quality-check
+        ref: PSREDEV-3740
         path: .devplatform-quality-check
 
     - name: Setup Python
