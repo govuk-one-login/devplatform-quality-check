@@ -35,6 +35,7 @@ runs:
         checkov -d . \
           --directory . \
           --external-checks-dir .devplatform-quality-check/src/checks/ \
-          --soft-fail
-          --output-format cli,sarif \
-          --output-file-path console,results.sarif \
+          --soft-fail \
+          --output cli \
+          --output sarif \
+          --output-file-path console,results.sarif
