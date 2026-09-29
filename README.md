@@ -1,19 +1,19 @@
-# devplatform-quality-check
+# security-checks
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-The DevPlatform Quality Check repository holds a suite of custom policies designed to enforce security and compliance standards for application teams deploying through DevPlatform's Secure Pipelines.
+The Security Checks repository holds a suite of custom policies designed to enforce security and compliance standards for application teams deploying through DevPlatform's Secure Pipelines.
 
 The policies are written as [Checkov](https://www.checkov.io/) custom checks and are published as a reusable GitHub composite action so that any application repository can scan its own CloudFormation/SAM templates against them.
 
 ## What the action does
 
-`.github/actions/quality-check` runs a Checkov scan of your templates using both the standard Checkov rule set and the custom DevPlatform checks in [`src/checks`](src/checks). In a single job step it:
+`.github/actions/custom-checkov-policies runs a Checkov scan of your templates using both the standard Checkov rule set and the custom DevPlatform checks in [`src/checks`](src/checks). In a single job step it:
 
-1. Checks out this repository into `.devplatform-quality-check` so the custom checks are available locally.
+1. Checks out this repository into `.security-checks` so the custom checks are available locally.
 2. Works out which `*.yaml` files changed on the branch (`git diff --name-only origin/main...HEAD`) so only modified templates are scanned.
 3. Installs Checkov on Python 3.12.
-4. Runs Checkov against the changed files with `--external-checks-dir .devplatform-quality-check/src/checks/`, writing results to the console and to `results.sarif`.
-5. Uploads `results.sarif` to GitHub code scanning under the category `devplatform-quality-check`. This runs on success or failure, so findings are always published.
+4. Runs Checkov against the changed files with `--external-checks-dir .security-checks/src/checks/`, writing results to the console and to `results.sarif`.
+5. Uploads `results.sarif` to GitHub code scanning under the category `security-checks`. This runs on success or failure, so findings are always published.
 
 A policy failure **fails the step and the pull request check**. Findings are printed in the job log and also appear in the repository's **Security → Code scanning** tab, annotated against the offending lines. To ship a template that a check flags, either fix the template or add a Checkov [inline suppression](https://www.checkov.io/2.Basics/). Teams should get security to review and sign off any inline suppressions (or [metadata](https://www.checkov.io/2.Basics/Suppressing%20and%20Skipping%20Policies.html#cloudformation-metadata)).
 
@@ -34,8 +34,8 @@ jobs:
         with:
           fetch-depth: 0 # required so the action can diff against origin/main
 
-      - name: Quality check
-        uses: govuk-one-login/devplatform-quality-check/.github/actions/quality-check@v1
+      - name: Security checks
+        uses: govuk-one-login/security-checks/.github/actions/custom-checkov-policies@v1
         with:
           framework: cloudformation
           ref: v1
@@ -45,7 +45,7 @@ jobs:
 
 | Input       | Required | Default          | Description                                                                                                            |
 |-------------|----------|------------------|------------------------------------------------------------------------------------------------------------------------|
-| `framework` | No       | `cloudformation` | Checkov framework to scan with. Use `cloudformation` for SAM and CloudFormation templates.                             |
+| `framework` | No       | `cloudformation` | The Checkov framework that matches your template type (e.g. `cloudformation` for SAM/CloudFormation templates).        |
 | `ref`       | No       | `v1`             | Tag or branch of this repository to load the custom checks from. Keep it aligned with the `@ref` you pin the action to. |
 
 ### Prerequisites
@@ -68,6 +68,3 @@ checkov -f path/to/template.yaml \
   --framework cloudformation \
   --external-checks-dir src/checks/
 ```
-
-## Licence
-[MIT License](LICENSE)
