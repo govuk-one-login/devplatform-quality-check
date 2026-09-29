@@ -1,25 +1,25 @@
-name: Run Quality Check
-description: Runs DevPlatform Quality Checks on SAM/CloudFormation templates
+name: Run Custom Checkov Policy Check
+description: Runs Custom Checkov Policies on SAM/CloudFormation templates
 
 inputs:
   framework:
-    description: The framework to use for the quality check
+    description: The framework of the templates to scan
     required: false
     default: cloudformation
   ref:
-    description: The ref (tag/branch) of devplatform-quality-check to load checks from
+    description: The ref (tag/branch) of security-checks to load checks from
     required: false
     default: v1
 
 runs:
   using: composite
   steps:
-    - name: Checkout quality-check repo (to get custom checks)
+    - name: Checkout security-checks repo (to get custom checks)
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
-        repository: govuk-one-login/devplatform-quality-check
+        repository: govuk-one-login/security-checks
         ref: ${{ inputs.ref }}
-        path: .devplatform-quality-check
+        path: .security-checks
         fetch-depth: '1'
 
     - name: Get changed files
@@ -43,7 +43,7 @@ runs:
       run: |
         checkov -f ${{ steps.diff.outputs.files }} \
           --framework ${{ inputs.framework }} \
-          --external-checks-dir .devplatform-quality-check/src/checks/ \
+          --external-checks-dir .security-checks/src/checks/ \
           --output cli \
           --output sarif \
           --output-file-path console,results.sarif
@@ -53,4 +53,4 @@ runs:
       uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
       with:
         sarif_file: results.sarif
-        category: devplatform-quality-check
+        category: security-checks
