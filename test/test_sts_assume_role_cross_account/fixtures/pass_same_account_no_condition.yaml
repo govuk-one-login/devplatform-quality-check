@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  PASS: trust policy allows sts:AssumeRole for a principal in the same account
+  (built from ${AWS::AccountId}). Same-account assume role is permitted and does
+  not require an aws:PrincipalOrgID condition.
+Resources:
+  SameAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "sts:AssumeRole"
