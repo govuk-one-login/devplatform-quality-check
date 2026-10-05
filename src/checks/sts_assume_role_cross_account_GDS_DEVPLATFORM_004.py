@@ -1,9 +1,10 @@
 from checkov.cloudformation.checks.resource.base_resource_check import BaseResourceCheck
 from checkov.common.models.enums import CheckCategories, CheckResult
-from helpers import matches_with_wildcard
+from helpers import get_policy_documents, matches_with_wildcard
 
 ASSUME_ROLE_ACTION = "sts:AssumeRole"
 PRINCIPAL_ORG_ID_KEY = "aws:PrincipalOrgID"
+ROLE_ARN_MARKER = ":role/"
 
 
 def _statements(doc):
@@ -30,7 +31,10 @@ def _references_own_account(value):
         if sub is None:
             return False
         if isinstance(sub, list):
-            sub = sub[0] if sub else ""
+            if sub:
+                sub = sub[0]
+            else:
+                sub = ""
         return "${AWS::AccountId}" in str(sub)
     return "${AWS::AccountId}" in str(value)
 
@@ -44,7 +48,10 @@ def _trusts_cross_account(statement):
     aws = principal.get("AWS")
     if aws is None:
         return False
-    values = aws if isinstance(aws, list) else [aws]
+    if isinstance(aws, list):
+        values = aws
+    else:
+        values = [aws]
     if any(value == "*" for value in values):
         return True
     return any(not _references_own_account(value) for value in values)
@@ -59,16 +66,57 @@ def _has_principal_org_id(condition):
     )
 
 
+def _grants_assume_role(statement):
+    return any(
+        matches_with_wildcard(action, ASSUME_ROLE_ACTION)
+        for action in _actions(statement)
+    )
+
+
+def _resource_text(resource):
+    if isinstance(resource, dict):
+        sub = resource.get("Fn::Sub")
+        if sub is None:
+            return ""
+        if isinstance(sub, list):
+            if sub:
+                return str(sub[0])
+            return ""
+        return str(sub)
+    return str(resource)
+
+
+def _is_specific_role_arn(resource):
+    text = _resource_text(resource)
+    if text == "*" or not text.startswith("arn:"):
+        return False
+    if ROLE_ARN_MARKER not in text:
+        return False
+
+    prefix = text.split(ROLE_ARN_MARKER, 1)[0]
+    if "iam::" not in prefix:
+        return False
+
+    account = prefix.split("iam::", 1)[1]
+    return bool(account) and "*" not in account
+
+
 class STSAssumeRoleCrossAccountOrgID(BaseResourceCheck):
     def __init__(self):
         super().__init__(
             name=(
                 "Ensure cross-account sts:AssumeRole trust policies are scoped to "
-                "the organisation with an aws:PrincipalOrgID condition"
+                "the organisation with an aws:PrincipalOrgID condition, and that "
+                "identity-based policies granting sts:AssumeRole target explicit "
+                "role ARNs (ADR 0226)"
             ),
-            id="GDS_DEVPLATFORM_003",
+            id="GDS_DEVPLATFORM_004",
             categories=[CheckCategories.IAM],
-            supported_resources=["AWS::IAM::Role"],
+            supported_resources=[
+                "AWS::IAM::ManagedPolicy",
+                "AWS::IAM::Policy",
+                "AWS::IAM::Role",
+            ],
         )
 
     def scan_resource_conf(self, conf):
@@ -78,10 +126,7 @@ class STSAssumeRoleCrossAccountOrgID(BaseResourceCheck):
             if statement.get("Effect") != "Allow":
                 continue
 
-            if not any(
-                matches_with_wildcard(action, ASSUME_ROLE_ACTION)
-                for action in _actions(statement)
-            ):
+            if not _grants_assume_role(statement):
                 continue
 
             if not _trusts_cross_account(statement):
@@ -89,6 +134,24 @@ class STSAssumeRoleCrossAccountOrgID(BaseResourceCheck):
 
             if not _has_principal_org_id(statement.get("Condition", {})):
                 return CheckResult.FAILED
+
+        for doc in get_policy_documents(conf):
+            for statement in _statements(doc):
+                if statement.get("Effect") != "Allow":
+                    continue
+
+                if not _grants_assume_role(statement):
+                    continue
+
+                resources = statement.get("Resource", [])
+                if isinstance(resources, (str, dict)):
+                    resources = [resources]
+
+                if not resources:
+                    return CheckResult.FAILED
+
+                if not all(_is_specific_role_arn(resource) for resource in resources):
+                    return CheckResult.FAILED
 
         return CheckResult.PASSED
 
