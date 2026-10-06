@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: govuk-one-login/devplatform-demo-sam-app
-          ref: PSREDEV-3741
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.DEMO_SAM_APP_SECURITY_CHECKS_TEST }}
 
@@ -46,8 +46,8 @@ jobs:
         run: |
           PR_URL=$(gh pr create \
             --repo govuk-one-login/devplatform-demo-sam-app \
-            --title "Integration test: checkov policies #${{ github.run_id }}" \
-            --body "Automated integration test from ${{ github.repository }}@${{ github.sha }}" \
+            --title "DO NOT MERGE - FOR TESTING ONLY: checkov policies GitHub Action test #${{ github.run_id }}" \
+            --body "Please do not merge. This is an an automated intergration test from ${{ github.repository }}@${{ github.sha }}." \
             --base main \
             --head "$BRANCH")
           echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
@@ -56,25 +56,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEMO_SAM_APP_SECURITY_CHECKS_TEST }}
         run: |
-          for i in $(seq 1 20); do
-            STATUS=$(gh pr checks "$PR_URL" \
-              --repo govuk-one-login/devplatform-demo-sam-app \
-              --json name,state \
-              --jq '.[] | select(.name == "devplatform-security-checks") | .state' 2>/dev/null | head -1)
-            echo "Attempt $i: status=$STATUS"
-            if [ "$STATUS" = "SUCCESS" ]; then
-              echo "Checkov check passed."
-              break
-            elif [ "$STATUS" = "FAILURE" ]; then
-              echo "Checkov check failed."
-              exit 1
-            fi
-            sleep 30
+          until RUN_ID=$(gh run list \
+            --repo govuk-one-login/devplatform-demo-sam-app \
+            --branch "$BRANCH" \
+            --workflow "pre-merge-checks.yaml" \
+            --json databaseId \
+            --jq '.[0].databaseId') && [ -n "$RUN_ID" ]; do
+            sleep 5
           done
-          if [ "$STATUS" != "SUCCESS" ]; then
-            echo "Timed out waiting for checkov check."
-            exit 1
-          fi
+          gh run watch "$RUN_ID" \
+            --repo govuk-one-login/devplatform-demo-sam-app \
+            --exit-status
 
       - name: Close test PR and delete branch
         if: always()
