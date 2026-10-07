@@ -1,0 +1,8 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  PassRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: "arn:aws:iam::aws:policy/AWSQuickSetupCFGCPacksPermissionsBoundary"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSQuickSetupCFGCPacksPermissionsBoundary"
